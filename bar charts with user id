@@ -1,0 +1,60 @@
+import matplotlib.pyplot as plt
+import pandas as pd
+
+# Example dataset (replace with your actual data)
+data = {
+    'user_id': [1, 2, 3, 4, 5, 6],
+    'Q1': ['Yes', 'No', 'Yes', 'No', 'Yes', 'Yes'],
+    'Q2': ['A', 'B', 'A', 'B', 'A', 'A']
+}
+
+# Convert to pandas DataFrame
+df = pd.DataFrame(data)
+
+# Define model answers for each question
+model_answers = {
+    'Q1': 'Yes',  # Model answer for Q1
+    'Q2': 'A'     # Model answer for Q2
+}
+
+# Function to create a bar chart with evenly spaced user IDs and a model answer strip
+def plot_question_bars_with_model(question, df, model_answer):
+    # Group by the question's answers and get the user IDs for each answer
+    grouped = df.groupby(question).agg({'user_id': lambda x: list(x)})
+    
+    # Create the plot
+    fig, ax = plt.subplots(figsize=(10, 6))  # Adjust figure size for readability
+    
+    # Plot vertical bars and set the color to green for all bars
+    bars = ax.bar(grouped.index, grouped['user_id'].apply(len), color='green')  
+    
+    # Annotate each bar with user IDs evenly spaced from top to bottom inside the bars
+    for bar, user_ids in zip(bars, grouped['user_id']):
+        num_users = len(user_ids)
+        if num_users > 0:
+            # Calculate vertical spacing between user IDs
+            y_offset_step = bar.get_height() / (num_users + 1)  # Spacing based on number of users
+            for i, user_id in enumerate(user_ids):
+                # Calculate the y-position for each user ID
+                y_position = (i + 1) * y_offset_step
+                ax.text(bar.get_x() + bar.get_width()/2, y_position, str(user_id),
+                        ha='center', va='bottom', fontsize=10, color='white', rotation=0)
+        
+        # Highlight the model answer with an orange strip at the bottom of the bar
+        if grouped.index.get_loc(model_answer) == bars.index(bar):
+            # Define the height and position for the model strip (at the bottom of the bar)
+            model_strip_height = 0.2  # Adjust as needed for the thickness of the strip
+            ax.add_patch(plt.Rectangle((bar.get_x(), 0), bar.get_width(), model_strip_height, 
+                                       color='orange', alpha=0.8))  # Add the orange strip at the base
+            
+            # Add 'Model' label on the orange strip
+            ax.text(bar.get_x() + bar.get_width()/2, model_strip_height/2, 'Model', 
+                    ha='center', va='center', fontsize=12, color='black', fontweight='bold')
+
+    ax.set_title(f'Question: {question}')
+    ax.set_ylabel('Count of Users')
+    plt.show()
+
+# Plot for each question with the corresponding model answer
+for question in df.columns[1:]:
+    plot_question_bars_with_model(question, df, model_answers[question])
